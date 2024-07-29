@@ -56,7 +56,7 @@
 
 
 
-@media screen and (max-width: 1200px) {
+@media screen and (max-width: 1400px) {
   .nav__item {
     font-size: 10px;
   }
@@ -64,14 +64,25 @@
     font-size: 10px;
   }
 
+
 }
 
+@media screen and (max-width: 1100px) {
+  .nav__item {
+    font-size: 9px;
+  }
+  .active_nav {
+    font-size: 9px;
+  }
+
+
+}
 
 
 @media screen and (max-width: 900px) {
   .main_page_container {
     height: auto;
-    margin-top: 110px;
+    margin-top: 75px;
   }
   .main_nav__logo{
     display: none;
@@ -83,7 +94,7 @@
 
   .dasboard_page_container {
     height: auto;
-    margin-top: 110px;
+    margin-top: 75px;
     overflow: auto;
   }
   .timeseries_heading p{
@@ -162,7 +173,7 @@ overflow-x: scroll;
   .logo_text h1 {
     color: black;
     /* text-shadow: 3px 3px 3px rgba(99, 99, 99, 0.5); */
-    font-size: 20px;
+    font-size: 1.25rem;
     text-align: left;
   }
   .leaflet-top,
@@ -171,6 +182,7 @@ overflow-x: scroll;
   }
 
   .short_nav_container {
+    height: 75px;
     justify-content: space-between;
     background-color: #ffffff;
   }
@@ -258,8 +270,8 @@ overflow-x: scroll;
     line-height: 25px;
     font-size: 18px;
     border-bottom: 1px solid rgb(223, 223, 223);
-    background-color: white;
-    color: rgb(0, 0, 0);
+    /* background-color: white; */
+
     /* border-bottom   : 1px solid rgb(223, 223, 223); */
   }
 
@@ -321,6 +333,7 @@ overflow-x: scroll;
 
 
 @media screen and (max-width: 700px) {
+  
 
   .chart_year_container{
     display: block;
@@ -350,6 +363,16 @@ overflow-x: scroll;
     font-size: 20px;
 
   }
+  .map_layer_manager{
+    width: 150px;
+  }
+  
+.coordinates_container {
+  width: 150px;
+}
 
+.legend_container {
+  width: 150px;
+}
 
 }

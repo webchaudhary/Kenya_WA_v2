@@ -28,12 +28,12 @@ import {
   setDragging,
   setInitialMapZoom,
 } from "../helpers/mapFunction";
-import MapLegend from "../components/MapLegend";
+import DynamicLegend from "../components/legend/DynamicLegend.js";
 import { ColorLegendsData } from "../assets/data/ColorLegendsData";
 import { useSelectedFeatureContext } from "../contexts/SelectedFeatureContext";
 import BiomassProductionChart from "../components/charts/BiomassProductionChart";
-import RasterLayerLegend from "../components/RasterLayerLegend";
-import PixelValue from "./PixelValue";
+import GeoserverLegend from "../components/legend/GeoserverLegend.js";
+
 import FiltereredDistrictsFeatures from "../components/FiltereredDistrictsFeatures.js";
 import SelectedFeatureHeading from "../components/SelectedFeatureHeading.js";
 import { useLoaderContext } from "../contexts/LoaderContext.js";
@@ -41,10 +41,12 @@ import axios from "axios";
 import Preloader from "../components/Preloader.js";
 import ReactApexChart from "react-apexcharts";
 import { BsInfoCircleFill } from "react-icons/bs";
+import { useModalHandles } from "../components/ModalHandles.js";
+import PixelValue from "../contexts/PixelValue.js";
 
 const MapDataLayers = [
   {
-    name: "Annual Biomass Production",
+    name: "Annual Biomass Production (Avg. 2018-2023)",
     value: "avg_biomass_raster",
     legend: "",
     attribution: "Data Source: <a href='https://www.fao.org/in-action/remote-sensing-for-water-productivity/wapor-data/en' target='_blank'>WaPOR L1 V3	</a>"
@@ -63,7 +65,7 @@ const BiomassPage = () => {
   const [selectedDataType, setSelectedDataType] = useState(MapDataLayers[0]);
   const { setIsLoading } = useLoaderContext();
   const [hydroclimaticStats, setHydroclimaticStats] = useState(null);
-
+  const { handleBiomassProduction , handleBiomassWaterProductivity} = useModalHandles();
   const { selectedView, selectedFeatureName, dataView } = useSelectedFeatureContext();
 
 
@@ -119,6 +121,7 @@ const BiomassPage = () => {
         const DataItem = hydroclimaticStats.find(
           (item) => item[dataView] === feature.properties.NAME
         );
+        
         const biomassProduction =
           intervalType === "Monthly"
             ? (DataItem[selectedDataType.value][selectedTime]).toFixed(2)
@@ -146,15 +149,14 @@ const BiomassPage = () => {
   }
 
   const DistrictStyle = (feature) => {
-    if (selectedTime !== "" && hydroclimaticStats) {
+    if (selectedTime && selectedDataType && selectedDataType.value && hydroclimaticStats) {
       const getDensityFromData = (name, view) => {
         const DataItem = hydroclimaticStats && hydroclimaticStats.find((item) => item[view] === name);
-        if (!DataItem) return null;
+
         if (intervalType === "Monthly") {
-          return DataItem[selectedDataType.value][selectedTime]; // Monthly density calculation
+          return DataItem && DataItem[selectedDataType.value][selectedTime]; // Monthly density calculation
         } else {
-          const annualData = getSumAnnualDataFromMonthly(DataItem[selectedDataType.value]);
-          return DataItem[selectedDataType.value] ? annualData[selectedTime] : null;
+          return DataItem && DataItem[selectedDataType.value] ? getSumAnnualDataFromMonthly(DataItem[selectedDataType.value])[selectedTime] : null;
         }
 
       };
@@ -212,17 +214,10 @@ const BiomassPage = () => {
                   </div>
 
                   <div className='info_container'>
-                    <div className='heading_info_button'>
+                    <div className='heading_info_button' onClick={handleBiomassProduction}>
                       <BsInfoCircleFill />
                     </div>
-                    <div className='info_card_container'>
-                      <p>
-                        Biomass refers to organic matter derived from living or recently living organisms. Biomass production in agriculture refers to the harvesting of organic matter from plants, including crops, grasses, and trees, which can be used for various purposes such as food, feed, fiber and biofuels.
-
-                      </p>
-
-
-                    </div>
+                    
                   </div>
                 </div>
 
@@ -324,21 +319,10 @@ const BiomassPage = () => {
                   </div>
 
                   <div className='info_container'>
-                    <div className='heading_info_button'>
+                    <div className='heading_info_button' onClick={handleBiomassWaterProductivity}>
                       <BsInfoCircleFill />
                     </div>
-                    <div className='info_card_container'>
-                      <p>
-                        The  Water Productivity indicator gives an estimate about the crop production per unit of  water use. In this case seasonal TBP is  used representing the overall biomass growth rate. The biomass water productivity was computed using the below formula:
-                        <br />
-
-                        Annual WPb  = Annual TBP / Annual ETa
-
-
-                      </p>
-
-
-                    </div>
+    
                   </div>
                 </div>
 
@@ -399,18 +383,12 @@ const BiomassPage = () => {
                     <h4>Average annual Biomass Production per {dataView.toLowerCase()}</h4>
                   </div>
 
-                  <div className='info_container'>
+                  {/* <div className='info_container'>
                     <div className='heading_info_button'>
                       <BsInfoCircleFill />
                     </div>
-                    <div className='info_card_container'>
-                      <p>
-                        Average annual Biomass Production per {dataView.toLowerCase()}
-                      </p>
-
-
-                    </div>
-                  </div>
+                    
+                  </div> */}
                 </div>
 
                 {hydroclimaticStats && (
@@ -484,26 +462,12 @@ const BiomassPage = () => {
                         </div>
                       </div>
                       <div className="accordion-item">
-                        <h2
-                          className="accordion-header"
-                          id="panelsStayOpen-headingTwo"
-                        >
-                          <button
-                            className="accordion-button map_layer_collapse collapsed"
-                            type="button"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#panelsStayOpen-collapseTwo"
-                            aria-expanded="false"
-                            aria-controls="panelsStayOpen-collapseTwo"
-                          >
+                      <h2 className="accordion-header" id="panelsStayOpen-headingTwo">
+                          <button className="accordion-button map_layer_collapse " type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseTwo" aria-expanded="true" aria-controls="panelsStayOpen-collapseTwo">
                             Raster Layers
                           </button>
                         </h2>
-                        <div
-                          id="panelsStayOpen-collapseTwo"
-                          className="accordion-collapse collapse"
-                          aria-labelledby="panelsStayOpen-headingTwo"
-                        >
+                        <div id="panelsStayOpen-collapseTwo" className="accordion-collapse collapse show" aria-labelledby="panelsStayOpen-headingTwo">
                           <div className="accordion-body map_layer_collapse_body">
                             {MapDataLayers.slice(0, 1).map((item, index) => (
                               <div key={index} className="form-check">
@@ -596,14 +560,15 @@ const BiomassPage = () => {
                         transparent={true}
                         format="image/png"
                         key="avg_biomass_raster"
+                        zIndex={3}
                       />
                       <PixelValue
                         layername="TBP_2018-2023_avg"
                         unit="kg/ha/year"
                       />
-                      <RasterLayerLegend
+                      <GeoserverLegend
                         layerName="TBP_2018-2023_avg"
-                        Unit="(kg/ha/year)"
+                        Unit="TBP (kg/ha/year)"
                       />
 
 
@@ -621,12 +586,12 @@ const BiomassPage = () => {
                       <FiltereredDistrictsFeatures
                         DistrictStyle={DistrictStyle}
                         DistrictOnEachfeature={DistrictOnEachfeature}
-                        layerKey={selectedDataType.value + selectedTime + intervalType}
+                        layerKey={selectedDataType.value + selectedTime + intervalType + (hydroclimaticStats && hydroclimaticStats.length)}
                         attribution={selectedDataType.attribution}
                       />
 
                       {ColorLegendsDataItem && (
-                        <MapLegend ColorLegendsDataItem={ColorLegendsDataItem} />
+                        <DynamicLegend ColorLegendsDataItem={ColorLegendsDataItem} />
                       )}
 
                     </>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import BaseMap from '../components/BaseMap'
 import { MapContainer, GeoJSON, TileLayer } from 'react-leaflet'
 import * as L from "leaflet";
@@ -6,10 +6,10 @@ import "leaflet/dist/leaflet.css"
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen.js';
 import 'leaflet-fullscreen/dist/leaflet.fullscreen.css';
 import { MonthsArray, SelectedFeaturesAverageClimateParaFunction, YearsArray, fillDensityColor, getSumAnnualDataFromMonthly, renderTimeOptions } from '../helpers/functions';
-import { BaseMapsLayers, mapCenter, setDragging, setInitialMapZoom } from '../helpers/mapFunction';
+import { BaseMapsLayers, mapCenter, maxBounds, setDragging, setInitialMapZoom } from '../helpers/mapFunction';
 import ClimateProjectionsChart from '../components/charts/ClimateProjectionsChart';
 import { useSelectedFeatureContext } from '../contexts/SelectedFeatureContext';
-import MapLegend from '../components/MapLegend';
+import DynamicLegend from '../components/legend/DynamicLegend.js';
 import { ColorLegendsData } from "../assets/data/ColorLegendsData";
 import FiltereredDistrictsFeatures from '../components/FiltereredDistrictsFeatures.js';
 import SelectedFeatureHeading from '../components/SelectedFeatureHeading.js';
@@ -42,7 +42,7 @@ const MapDataLayers = [
 const ClimateChangePage = () => {
   const [selectedDataType, setSelectedDataType] = useState(MapDataLayers[0]);
   const [selectedTime, setSelectedTime] = useState(8);
-  const { selectedView, selectedFeatureName , dataView} = useSelectedFeatureContext();
+  const { selectedView, selectedFeatureName, dataView } = useSelectedFeatureContext();
   const { setIsLoading } = useLoaderContext();
   const [climateChangeStats, setClimateChangeStats] = useState(null);
 
@@ -83,8 +83,6 @@ const ClimateChangePage = () => {
 
 
 
-
-
   const handleBasemapSelection = (e) => {
     const selectedItem = BaseMapsLayers.find((item) => item.name === e.target.value);
     setSelectedBasemapLayer(selectedItem);
@@ -99,38 +97,56 @@ const ClimateChangePage = () => {
   };
 
 
+
+
   const ColorLegendsDataItem = ColorLegendsData[`${selectedDataType.value}`];
 
-  function DistrictOnEachfeature(feature, layer) {
-    layer.on("mouseover", function (e) {
-      const DataItem = climateChangeStats.find(
-        (item) => item[dataView] === feature.properties.NAME
-      );
-      const popupContent = `
-            <div>
-              ${dataView}: ${feature.properties.NAME}<br/>
-              ${selectedDataType.value === 'pcp_ssp585' ? `Precipitation: ${DataItem[selectedDataType.value][selectedTime]} (mm)` :
-          selectedDataType.value === 'pcp_ssp245' ? `Precipitation: ${DataItem[selectedDataType.value][selectedTime]} (mm)` :
-            selectedDataType.value === 'tdeg_ssp585' ? `Temperature: ${DataItem[selectedDataType.value][selectedTime]} (°C))` :
-              selectedDataType.value === 'tdeg_ssp245' ? `Temperature: ${DataItem[selectedDataType.value][selectedTime]} (°C))` :
-                null}
-        <br/>
-            </div>
-          `;
-      layer.bindTooltip(popupContent, { sticky: true });
-      layer.openTooltip();
-    });
 
-    layer.on("mouseout", function () {
-      layer.closeTooltip();
-    });
-  }
+
+  const DistrictOnEachfeature = useCallback((feature, layer) => {
+    if (climateChangeStats) {
+
+      layer.on("mouseover", function (e) {
+        const DataItem = climateChangeStats.find(
+          (item) => item[dataView] === feature.properties.NAME
+        );
+
+        let popupContent;
+
+        if (DataItem) {
+          popupContent = `
+          <div>
+            ${dataView}: ${feature.properties.NAME}<br/>
+            ${selectedDataType.value === 'pcp_ssp585' ? `Precipitation: ${DataItem[selectedDataType.value][selectedTime]} (mm)` :
+              selectedDataType.value === 'pcp_ssp245' ? `Precipitation: ${DataItem[selectedDataType.value][selectedTime]} (mm)` :
+                selectedDataType.value === 'tdeg_ssp585' ? `Temperature: ${DataItem[selectedDataType.value][selectedTime]} (°C)` :
+                  selectedDataType.value === 'tdeg_ssp245' ? `Temperature: ${DataItem[selectedDataType.value][selectedTime]} (°C)` :
+                    null}
+              <br/>
+          </div>
+        `;
+        }
+
+        layer.bindTooltip(popupContent, { sticky: true });
+        layer.openTooltip();
+      });
+
+      layer.on("mouseout", function () {
+        layer.closeTooltip();
+      });
+    }
+  }, [climateChangeStats, dataView, selectedDataType, selectedTime]);
+
+
+
+
+
 
   const DistrictStyle = (feature) => {
-    if (selectedTime !== "") {
+    if (selectedTime && selectedDataType && climateChangeStats) {
       const getDensityFromData = (name, view) => {
-        const DataItem = climateChangeStats.find((item) => item[view] === name);
-        return DataItem[selectedDataType.value][selectedTime]
+        const DataItem = climateChangeStats && climateChangeStats.find((item) => item[view] === name);
+        return DataItem && DataItem[selectedDataType.value] ? DataItem[selectedDataType.value][selectedTime] : null
       };
       const density = getDensityFromData(feature.properties.NAME, dataView)
       return {
@@ -152,236 +168,209 @@ const ClimateChangePage = () => {
 
   return (
     <>
-    {SelectedFeaturesStatsData ? (
-      <div className='dasboard_page_container'>
-      <div className='main_dashboard'>
+      {SelectedFeaturesStatsData ? (
+        <div className='dasboard_page_container'>
+          <div className='main_dashboard'>
 
-        <div className='left_panel_equal'>
-        <SelectedFeatureHeading/>
+            <div className='left_panel_equal'>
+              <SelectedFeatureHeading />
 
-
-
-          <div className='card_container'>
-
-            
-            <div className='defination_container'>
-              <h4>Temperature</h4>
-            </div>
-            <ClimateProjectionsChart
-            yearsArray={ClimateChangeProjectionYears_StringArray}
-              xData={ClimateChangeProjectionYears_NumArray}
-              yData={SelectedFeaturesStatsData.tdeg_ssp245}
-              xAxisLabel="Year"
-              yAxisLabel="Temperature under SSP 245 (°C)"
-              color="purple"
-              slopeUnit="°C"
-            />
-            <ClimateProjectionsChart
-            yearsArray={ClimateChangeProjectionYears_StringArray}
-              xData={ClimateChangeProjectionYears_NumArray}
-              yData={SelectedFeaturesStatsData.tdeg_ssp585}
-              xAxisLabel="Year"
-              yAxisLabel="Temperature under SSP 585 (°C)"
-              color="purple"
-              slopeUnit="°C"
-            />
-          </div>
-
-          <div className='card_container'>
-            <div className='defination_container'>
-              <h4>Precipitation</h4>
-            </div>
-            <ClimateProjectionsChart
-            yearsArray={ClimateChangeProjectionYears_StringArray}
-            xData={ClimateChangeProjectionYears_NumArray}
-              yData={SelectedFeaturesStatsData.pcp_ssp245}
-              xAxisLabel="Year"
-              yAxisLabel="Precipitation under SSP 245 (mm/year)"
-              color="blue"
-              slopeUnit="mm/year"
-            />
-
-            <ClimateProjectionsChart
-            yearsArray={ClimateChangeProjectionYears_StringArray}
-            xData={ClimateChangeProjectionYears_NumArray}
-              yData={SelectedFeaturesStatsData.pcp_ssp585}
-              xAxisLabel="Year"
-              yAxisLabel="Precipitation under SSP 585 (mm/year)"
-              color="blue"
-              slopeUnit="mm/year"
-            />
-
-          </div>
-
-
-
-        </div>
-
-
-        <div className='right_panel_equal' >
-          <div className='card_container' style={{ height: "100%" }}>
-            <MapContainer
-              fullscreenControl={true}
-              center={mapCenter}
-              style={{ width: '100%', height: "100%", backgroundColor: 'white', border: 'none', margin: 'auto' }}
-              zoom={setInitialMapZoom()}
-              maxBounds={[[23, 49], [41, 82]]}
-              // maxZoom={8}
-              minZoom={setInitialMapZoom()}
-              keyboard={false}
-              dragging={setDragging()}
-              // attributionControl={false}
-              // scrollWheelZoom={false}
-              doubleClickZoom={false}
-            >
-              <div className='map_heading'>
-                <p> {selectedDataType.name} </p>
-              </div>
-              
-
-              <div className='map_layer_manager'>
-                <div className="accordion" id="accordionPanelsStayOpenExample">
-                  <div className="accordion-item">
-                    <h2 className="accordion-header" id="panelsStayOpen-headingOne">
-                      <button className="accordion-button map_layer_collapse collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOne" aria-expanded="false" aria-controls="panelsStayOpen-collapseOne">
-                        Base Map
-                      </button>
-                    </h2>
-                    <div id="panelsStayOpen-collapseOne" className="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingOne">
-                      <div className="accordion-body map_layer_collapse_body">
-                        {BaseMapsLayers.map((option,index) => (
-                          <div key={index} className="form-check">
-                            <input
-                              type="radio"
-                              className="form-check-input"
-                              id={option.name}
-                              name="data_type"
-                              value={option.name}
-                              checked={selectedBasemapLayer?.name === option.name}
-                              onChange={handleBasemapSelection}
-                            />
-                            <label htmlFor={option.name}>{option.name}</label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  {/* <div className="accordion-item">
-                    <h2 className="accordion-header" id="panelsStayOpen-headingTwo">
-                      <button className="accordion-button map_layer_collapse collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseTwo" aria-expanded="false" aria-controls="panelsStayOpen-collapseTwo">
-                        Raster Layers
-                      </button>
-                    </h2>
-                    <div id="panelsStayOpen-collapseTwo" className="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingTwo">
-                      <div className="accordion-body map_layer_collapse_body">
-                        <div className="collapse_layers_item">
-                          <input
-                            type="checkbox"
-                            id="avg_aeti_raster"
-                            value="avg_aeti_raster"
-                            checked={selectedRaster === 'avg_aeti_raster'}
-                            onChange={handleRasterSelectionChange}
-                          />
-                          <label htmlFor="avg_aeti_raster">Avg. Annual Evapotranspiration</label>
-
-
-                        </div>
-                        <div className="collapse_layers_item">
-                          <input
-                            type="checkbox"
-                            id="avg_ret_raster"
-                            value="avg_ret_raster"
-                            checked={selectedRaster === 'avg_ret_raster'}
-                            onChange={handleRasterSelectionChange}
-                          />
-                          <label htmlFor="avg_ret_raster">Avg. Annual Potential ET</label>
-
-                        </div>
-
-                      </div>
-                    </div>
-                  </div> */}
-                  <div className="accordion-item">
-                    <h2 className="accordion-header" id="panelsStayOpen-headingThree">
-                      <button className="accordion-button map_layer_collapse collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseThree" aria-expanded="false" aria-controls="panelsStayOpen-collapseThree">
-                        Climate Change Projection
-                      </button>
-                    </h2>
-                    <div id="panelsStayOpen-collapseThree" className="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingThree">
-                      <div className="accordion-body map_layer_collapse_body">
-
-                        {MapDataLayers.map((item, index) => (
-                          <div key={index} className="form-check">
-                            <input
-                              type="checkbox"
-                              className="form-check-input"
-                              id={item.value}
-                              value={item.value}
-                              checked={selectedDataType.value === item.value}
-                              onChange={handleDataLayerSelection}
-                            />
-                            <label htmlFor={item.value}> {item.name}</label>
-                          </div>
-                        ))}
-
-
-                        <select value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)}>
-
-                          {Array.from({ length: 86 }, (_, index) => {
-                            const year = 2015 + index;
-                            return (
-                              <option key={index} value={index}>
-                                {`${year}`}
-                              </option>
-                            );
-                          })}
-
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <TileLayer
-                key={selectedBasemapLayer.url}
-                attribution={selectedBasemapLayer.attribution}
-                url={selectedBasemapLayer.url}
-                subdomains={selectedBasemapLayer.subdomains}
-              />
-
-
-              {selectedDataType && selectedDataType.value && selectedTime !== '' && (
+              {climateChangeStats && (
                 <>
-                  {ColorLegendsDataItem && (
-                    <MapLegend ColorLegendsDataItem={ColorLegendsDataItem} />
-                  )}
-                  <FiltereredDistrictsFeatures
-                    DistrictStyle={DistrictStyle}
-                    DistrictOnEachfeature={DistrictOnEachfeature}
-                    layerKey={selectedDataType.value + selectedTime}
-                    attribution="Model: <a href='https://gmd.copernicus.org/articles/12/4823/2019/gmd-12-4823-2019.html' target='_blank'>CanESM5.0.3</a>"
-                  />
+                  <div className='card_container'>
 
+
+                    <div className='defination_container'>
+                      <h4>Temperature</h4>
+                    </div>
+                    <ClimateProjectionsChart
+                      yearsArray={ClimateChangeProjectionYears_StringArray}
+                      xData={ClimateChangeProjectionYears_NumArray}
+                      yData={SelectedFeaturesStatsData.tdeg_ssp245}
+                      xAxisLabel="Year"
+                      yAxisLabel="Temperature under SSP 245 (°C)"
+                      color="purple"
+                      slopeUnit="°C"
+                    />
+                    <ClimateProjectionsChart
+                      yearsArray={ClimateChangeProjectionYears_StringArray}
+                      xData={ClimateChangeProjectionYears_NumArray}
+                      yData={SelectedFeaturesStatsData.tdeg_ssp585}
+                      xAxisLabel="Year"
+                      yAxisLabel="Temperature under SSP 585 (°C)"
+                      color="purple"
+                      slopeUnit="°C"
+                    />
+                  </div>
+
+                  <div className='card_container'>
+                    <div className='defination_container'>
+                      <h4>Precipitation</h4>
+                    </div>
+                    <ClimateProjectionsChart
+                      yearsArray={ClimateChangeProjectionYears_StringArray}
+                      xData={ClimateChangeProjectionYears_NumArray}
+                      yData={SelectedFeaturesStatsData.pcp_ssp245}
+                      xAxisLabel="Year"
+                      yAxisLabel="Precipitation under SSP 245 (mm/year)"
+                      color="blue"
+                      slopeUnit="mm/year"
+                    />
+
+                    <ClimateProjectionsChart
+                      yearsArray={ClimateChangeProjectionYears_StringArray}
+                      xData={ClimateChangeProjectionYears_NumArray}
+                      yData={SelectedFeaturesStatsData.pcp_ssp585}
+                      xAxisLabel="Year"
+                      yAxisLabel="Precipitation under SSP 585 (mm/year)"
+                      color="blue"
+                      slopeUnit="mm/year"
+                    />
+
+                  </div>
                 </>
 
               )}
 
-              {/* <FiltererdJsonFeature /> */}
 
-              <BaseMap />
 
-            </MapContainer>
+
+
+
+
+            </div>
+
+
+            <div className='right_panel_equal' >
+              <div className='card_container' style={{ height: "100%" }}>
+                <MapContainer
+                  fullscreenControl={true}
+                  center={mapCenter}
+                  style={{ width: '100%', height: "100%", backgroundColor: 'white', border: 'none', margin: 'auto' }}
+                  zoom={setInitialMapZoom()}
+                  maxBounds={maxBounds}
+                  zoomSnap={0.5}
+                  minZoom={setInitialMapZoom() - 1}
+                  keyboard={false}
+                  dragging={setDragging()}
+                  doubleClickZoom={false}
+                >
+                  <div className='map_heading'>
+                    <p> {selectedDataType.name} </p>
+                  </div>
+
+
+                  <div className='map_layer_manager'>
+                    <div className="accordion" id="accordionPanelsStayOpenExample">
+                      <div className="accordion-item">
+                        <h2 className="accordion-header" id="panelsStayOpen-headingOne">
+                          <button className="accordion-button map_layer_collapse collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOne" aria-expanded="false" aria-controls="panelsStayOpen-collapseOne">
+                            Base Map
+                          </button>
+                        </h2>
+                        <div id="panelsStayOpen-collapseOne" className="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingOne">
+                          <div className="accordion-body map_layer_collapse_body">
+                            {BaseMapsLayers.map((option, index) => (
+                              <div key={index} className="form-check">
+                                <input
+                                  type="radio"
+                                  className="form-check-input"
+                                  id={option.name}
+                                  name="data_type"
+                                  value={option.name}
+                                  checked={selectedBasemapLayer?.name === option.name}
+                                  onChange={handleBasemapSelection}
+                                />
+                                <label htmlFor={option.name}>{option.name}</label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+
+                      <div className="accordion-item">
+                        <h2 className="accordion-header" id="panelsStayOpen-headingThree">
+                          <button className="accordion-button map_layer_collapse" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseThree" aria-expanded="true" aria-controls="panelsStayOpen-collapseThree">
+                            Climate Change Projection
+                          </button>
+                        </h2>
+                        <div id="panelsStayOpen-collapseThree" className="accordion-collapse collapse show" aria-labelledby="panelsStayOpen-headingThree">
+                          <div className="accordion-body map_layer_collapse_body">
+
+                            {MapDataLayers.map((item, index) => (
+                              <div key={index} className="form-check">
+                                <input
+                                  type="checkbox"
+                                  className="form-check-input"
+                                  id={item.value}
+                                  value={item.value}
+                                  checked={selectedDataType.value === item.value}
+                                  onChange={handleDataLayerSelection}
+                                />
+                                <label htmlFor={item.value}> {item.name}</label>
+                              </div>
+                            ))}
+
+
+                            <select value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)}>
+
+                              {Array.from({ length: 86 }, (_, index) => {
+                                const year = 2015 + index;
+                                return (
+                                  <option key={index} value={index}>
+                                    {`${year}`}
+                                  </option>
+                                );
+                              })}
+
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <TileLayer
+                    key={selectedBasemapLayer.url}
+                    attribution={selectedBasemapLayer.attribution}
+                    url={selectedBasemapLayer.url}
+                    subdomains={selectedBasemapLayer.subdomains}
+                  />
+
+
+                  {selectedDataType && selectedDataType.value && selectedTime !== '' && (
+
+
+                    <>
+                      {ColorLegendsDataItem && (
+                        <DynamicLegend ColorLegendsDataItem={ColorLegendsDataItem} />
+                      )}
+                      <FiltereredDistrictsFeatures
+                        DistrictStyle={DistrictStyle}
+                        DistrictOnEachfeature={DistrictOnEachfeature}
+                        layerKey={ selectedDataType.value + selectedTime  + (climateChangeStats && climateChangeStats.length)}
+                        attribution="Model: <a href='https://gmd.copernicus.org/articles/12/4823/2019/gmd-12-4823-2019.html' target='_blank'>CanESM5.0.3</a>"
+                      />
+
+                    </>
+
+                  )}
+
+
+                  <BaseMap />
+
+                </MapContainer>
+              </div>
+            </div>
+
           </div>
         </div>
 
-      </div>
-    </div>
+      ) : (
+        <Preloader />
+      )}</>
 
-    ):(
-      <Preloader/>
-    )}</>
-    
   )
 }
 

@@ -7,11 +7,8 @@ import 'leaflet-fullscreen/dist/Leaflet.fullscreen.js';
 import 'leaflet-fullscreen/dist/leaflet.fullscreen.css';
 import BaseMap from '../components/BaseMap';
 import { MonthsArray, SelectedFeaturesAverageSPEIFunction, calculateAverageOfArray, fillDensityColor, renderTimeOptions } from '../helpers/functions';
-
-
-import Plot from 'react-plotly.js';
 import { useSelectedFeatureContext } from '../contexts/SelectedFeatureContext';
-import { BaseMapsLayers, mapCenter, setDragging, setInitialMapZoom } from '../helpers/mapFunction';
+import { BaseMapsLayers, mapCenter, maxBounds, setDragging, setInitialMapZoom } from '../helpers/mapFunction';
 import spei_legend from "../assets/legends/spei_legend.jpg"
 import { ColorLegendsData } from '../assets/data/ColorLegendsData';
 import FiltereredDistrictsFeatures from '../components/FiltereredDistrictsFeatures.js';
@@ -21,7 +18,8 @@ import { useLoaderContext } from '../contexts/LoaderContext.js';
 import Preloader from '../components/Preloader.js';
 import SPEIChart from '../components/charts/SPEIChart.js';
 import { BsInfoCircleFill } from 'react-icons/bs';
-
+import { useModalHandles } from '../components/ModalHandles.js';
+import DynamicLegend from '../components/legend/DynamicLegend.js';
 
 const MapDataLayers = [
   {
@@ -98,10 +96,10 @@ const XYZTilelayersData = [
 const DroughtConditions = () => {
   // const [selectedDataType, setSelectedDataType] = useState(XYZTilelayersData[0]);
   const [selectedDataType, setSelectedDataType] = useState(MapDataLayers[0]);
-
-
+  const [selectedTime, setSelectedTime] = useState(68);
+  const { handleSPEI } = useModalHandles();
   const { selectedView, selectedFeatureName, dataView } = useSelectedFeatureContext();
-
+  const [intervalType, setIntervalType] = useState('Monthly');
 
   const { setIsLoading } = useLoaderContext();
   const [droughtConditionStats, setDroughtConditionStats] = useState(null);
@@ -149,7 +147,7 @@ const DroughtConditions = () => {
 
   };
 
-
+  const ColorLegendsDataItem = ColorLegendsData['SPEI'];
 
 
 
@@ -163,25 +161,25 @@ const DroughtConditions = () => {
 
 
 
-  const DistrictDensity = (density) => {
-    if (density === null) {
-      return 'none';
-    }
+  // const DistrictDensity = (density) => {
+  //   if (density === null) {
+  //     return 'none';
+  //   }
 
-    return density > -0.5
-      ? 'white'
-      : density > -0.8
-        ? 'yellow'
-        : density > -1.3
-          ? 'rgb(252, 214, 148)'
-          : density > -1.6
-            ? 'orange'
-            : density > -2
-              ? 'red'
-              : density > -3
-                ? 'brown'
-                : 'none';
-  };
+  //   return density > -0.5
+  //     ? 'white'
+  //     : density > -0.8
+  //       ? 'yellow'
+  //       : density > -1.3
+  //         ? 'rgb(252, 214, 148)'
+  //         : density > -1.6
+  //           ? 'orange'
+  //           : density > -2
+  //             ? 'red'
+  //             : density > -3
+  //               ? 'brown'
+  //               : 'none';
+  // };
 
 
 
@@ -192,8 +190,9 @@ const DroughtConditions = () => {
         (item) => item[dataView] === feature.properties.NAME
       );
 
+
       const SPEI_value = DataItem && DataItem[selectedDataType.value] !== "NA"
-        ? calculateAverageOfArray(DataItem[selectedDataType.value])
+        ? DataItem[selectedDataType.value][selectedTime]
         : null;
       const popupContent = `
             <div>
@@ -217,14 +216,14 @@ const DroughtConditions = () => {
     const getDensityFromData = (name, view) => {
       const DataItem = droughtConditionStats.find((item) => item[view] === name);
       return DataItem && DataItem[selectedDataType.value] !== "NA"
-        ? DataItem[selectedDataType.value][0]
+        ? DataItem[selectedDataType.value][selectedTime]
         : null;
     };
     const density = getDensityFromData(feature.properties.NAME, dataView)
 
     return {
-      fillColor: DistrictDensity(density),
-      // fillColor: ColorLegendsDataItem ? fillDensityColor(ColorLegendsDataItem, density) : "none",
+      // fillColor: DistrictDensity(density),
+      fillColor: ColorLegendsDataItem ? fillDensityColor(ColorLegendsDataItem, density) : "none",
       weight: 1,
       opacity: 1,
       color: "black",
@@ -248,28 +247,21 @@ const DroughtConditions = () => {
 
               <div className='card_container'>
 
-                  <div className='card_heading_container'>
-                    <div className='card_heading'>
-                      <h4>Standardised Precipitation-Evapotranspiration Index (SPEI)</h4>
-                    </div>
-
-                    <div className='info_container'>
-                      <div className='heading_info_button'>
-                        <BsInfoCircleFill />
-                      </div>
-                      <div className='info_card_container'>
-                        <p>
-                        The SPEI is a multiscalar drought index based on climatic data. It can be used for determining the onset, duration and magnitude of drought conditions with respect to normal conditions in a variety of natural and managed systems such as crops, ecosystems, rivers, water resources, etc.
-
-                        </p>
- 
-
-                      </div>
-                    </div>
+                <div className='card_heading_container'>
+                  <div className='card_heading'>
+                    <h4>Standardised Precipitation-Evapotranspiration Index (SPEI)</h4>
                   </div>
 
+                  <div className='info_container'>
+                    <div className='heading_info_button' onClick={handleSPEI}>
+                      <BsInfoCircleFill />
+                    </div>
 
-              
+                  </div>
+                </div>
+
+
+
                 <SPEIChart
                   chartData={SelectedFeaturesStatsData.spei_03}
                   title="SPEI 3-Months"
@@ -292,20 +284,18 @@ const DroughtConditions = () => {
             </div>
             <div className='right_panel_equal' >
               <div className='card_container' style={{ height: "100%" }}>
-                <MapContainer
-                  fullscreenControl={true}
-                  center={mapCenter}
-                  style={{ width: '100%', height: "100%", backgroundColor: 'white', border: 'none', margin: 'auto' }}
-                  zoom={setInitialMapZoom()}
-                  // maxBounds={[[23, 49], [41, 82]]}
-                  // maxZoom={8}
-                  // minZoom={setInitialMapZoom()}
-                  keyboard={false}
-                  dragging={setDragging()}
-                  // attributionControl={false}
-                  // scrollWheelZoom={false}
-                  doubleClickZoom={false}
-                >
+              <MapContainer
+                    fullscreenControl={true}
+                    center={mapCenter}
+                    style={{ width: '100%', height: "100%", backgroundColor: 'white', border: 'none', margin: 'auto' }}
+                    zoom={setInitialMapZoom()}
+                    maxBounds={maxBounds}
+                    zoomSnap={0.5}
+                    minZoom={setInitialMapZoom() - 1}
+                    keyboard={false}
+                    dragging={setDragging()}
+                    doubleClickZoom={false}
+                  >
 
                   <div className='map_heading'>
                     <p> {selectedDataType.name} </p>
@@ -341,12 +331,20 @@ const DroughtConditions = () => {
 
                       <div className="accordion-item">
                         <h2 className="accordion-header" id="panelsStayOpen-headingThree">
-                          <button className="accordion-button map_layer_collapse collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseThree" aria-expanded="false" aria-controls="panelsStayOpen-collapseThree">
+                          <button className="accordion-button map_layer_collapse " type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseThree" aria-expanded="true" aria-controls="panelsStayOpen-collapseThree">
                             Data Layers
                           </button>
                         </h2>
-                        <div id="panelsStayOpen-collapseThree" className="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingThree">
+                        <div id="panelsStayOpen-collapseThree" className="accordion-collapse collapse show" aria-labelledby="panelsStayOpen-headingThree">
                           <div className="accordion-body map_layer_collapse_body">
+
+                            <select
+                              value={selectedTime}
+                              onChange={(e) => setSelectedTime(e.target.value)}
+                            >
+                              {renderTimeOptions(intervalType)}
+                            </select>
+
 
                             {MapDataLayers.map((item, index) => (
                               <div key={index} className="form-check">
@@ -408,26 +406,19 @@ const DroughtConditions = () => {
                   <FiltereredDistrictsFeatures
                     DistrictStyle={DistrictStyle}
                     DistrictOnEachfeature={DistrictOnEachfeature}
-                    layerKey={selectedDataType.value}
+
+                    layerKey={selectedDataType.value + selectedTime + intervalType + (droughtConditionStats && droughtConditionStats.length)}
 
                     selectedDataType={selectedDataType}
                     attribution='Data Source: <a href="https://spei.csic.es/map/maps.html#months=1#month=1#year=2024" target="_blank">SPEI Global Drought Monitor</a>'
                   />
 
-                  <div className='drought_legend_panel'>
-                    {/* <div className="legend_heading">
-                  <p>
-                   SPEI
-                  </p>
-                </div> */}
-                    <img src={spei_legend} alt='worldcover_Legend' />
-                  </div>
+                  {ColorLegendsDataItem && (
+                    <DynamicLegend ColorLegendsDataItem={ColorLegendsDataItem} />
+                  )}
 
 
 
-                  {/* <FiltererdJsonFeature /> */}
-
-                  {/* <BaseMap /> */}
 
                 </MapContainer>
               </div>

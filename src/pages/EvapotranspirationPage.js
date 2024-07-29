@@ -7,13 +7,13 @@ import 'leaflet-fullscreen/dist/leaflet.fullscreen.css';
 import BaseMap from '../components/BaseMap';
 import { MonthsArray, SelectedFeaturesAverageStatsFunction, SelectedFeaturesWeightedAverageStatsFunction, YearsArray, calculateAverageOfArray, calculateSumOfArray, fillDensityColor, getSumAnnualDataFromMonthly, renderTimeOptions } from '../helpers/functions';
 import { BaseMapsLayers, mapCenter, maxBounds, pngRasterBounds, setDragging, setInitialMapZoom } from '../helpers/mapFunction';
-import MapLegend from '../components/MapLegend';
+import DynamicLegend from '../components/legend/DynamicLegend.js';
 import { ColorLegendsData } from "../assets/data/ColorLegendsData";
 import { useSelectedFeatureContext } from '../contexts/SelectedFeatureContext';
 import TotalConsumptionChart from '../components/charts/TotalConsumptionChart';
 import UnitConsumptionChart from '../components/charts/UnitConsumptionChart';
-import RasterLayerLegend from '../components/RasterLayerLegend';
-import PixelValue from './PixelValue';
+import GeoserverLegend from '../components/legend/GeoserverLegend.js';
+import PixelValue from "../contexts/PixelValue.js";
 import FiltereredDistrictsFeatures from '../components/FiltereredDistrictsFeatures.js';
 import SelectedFeatureHeading from '../components/SelectedFeatureHeading.js';
 import { useLoaderContext } from '../contexts/LoaderContext.js';
@@ -23,29 +23,31 @@ import ReactApexChart from 'react-apexcharts';
 import TableView from '../components/TableView.js';
 import CardHeading from '../components/charts/CardHeading.js';
 import { BsInfoCircleFill } from "react-icons/bs";
+import { useModalHandles } from '../components/ModalHandles.js';
+
 
 const MapDataLayers = [
   {
-    name: "Annual ET",
+    name: "Annual ET (Avg. 2018-2023)",
     value: "avg_aeti_raster",
     legend: "",
     attribution: "Data Source: <a href='https://www.fao.org/in-action/remote-sensing-for-water-productivity/wapor-data/en' target='_blank'>WaPOR L1 V3</a>"
   },
   {
-    name: "Annual Ref. ET",
+    name: "Annual  Ref. ET (Avg. 2018-2023)",
     value: "avg_ret_raster",
     legend: "",
     attribution: "Data Source: <a href='https://data.apps.fao.org/catalog/dataset/global-weather-for-agriculture-agera5' target='_blank'>AgERA5 </a>"
 
   },
   // {
-  //   name: "Annual Potential ET",
+  //   name: "Annual  Potential ET (Avg. 2018-2023)",
   //   value: "avg_pet_raster",
   //   legend: "",
   //   attribution: "Data Source: <a href='https://developers.google.com/earth-engine/datasets/catalog/NASA_GLDAS_V021_NOAH_G025_T3H' target='_blank'>GLDAS </a>"
   // },
   {
-    name: "Annual PCP-ET",
+    name: "Annual  PCP-ET (Avg. 2018-2023)",
     value: "avg_pcp_et",
     legend: "",
     attribution: ""
@@ -87,6 +89,7 @@ const EvapotranspirationPage = () => {
   const [selectedBasemapLayer, setSelectedBasemapLayer] = useState(BaseMapsLayers[0]);
   const [hydroclimaticStats, setHydroclimaticStats] = useState(null);
 
+  const { handleET } = useModalHandles();
 
 
   const handleBasemapSelection = (e) => {
@@ -127,7 +130,6 @@ const EvapotranspirationPage = () => {
       });
     }
   }, [selectedView, selectedFeatureName]);
-
 
 
 
@@ -191,7 +193,7 @@ const EvapotranspirationPage = () => {
   }
 
 
-console.log(hydroclimaticStats)
+
 
 
   const DistrictStyle = (feature) => {
@@ -199,27 +201,29 @@ console.log(hydroclimaticStats)
       const getDensityFromData = (name, view) => {
 
         const DataItem = hydroclimaticStats && hydroclimaticStats.find((item) => item[view] === name);
+
         if (selectedDataType.value === "PCP_ET") {
           if (intervalType === 'Monthly') {
-            return DataItem["PCP"][selectedTime] - DataItem["AETI"][selectedTime];
+            return DataItem && DataItem["PCP"][selectedTime] - DataItem["AETI"][selectedTime];
           } else {
-            return getSumAnnualDataFromMonthly(DataItem["PCP"])[selectedTime] - getSumAnnualDataFromMonthly(DataItem["AETI"])[selectedTime];
+            return DataItem && getSumAnnualDataFromMonthly(DataItem["PCP"])[selectedTime] - getSumAnnualDataFromMonthly(DataItem["AETI"])[selectedTime];
           }
         } if (selectedDataType.value === "PET") {
           if (intervalType === 'Yearly') {
-            return DataItem["PET"][selectedTime];
+            return DataItem && DataItem["PET"][selectedTime];
           }
         }
         else {
           if (intervalType === 'Monthly') {
-            return DataItem[selectedDataType.value] ? DataItem[selectedDataType.value][selectedTime] : null;
+            return DataItem && DataItem[selectedDataType.value] ? DataItem[selectedDataType.value][selectedTime] : null;
           } else {
-            return DataItem[selectedDataType.value] ? getSumAnnualDataFromMonthly(DataItem[selectedDataType.value])[selectedTime] : null;
+            return DataItem && DataItem[selectedDataType.value] ? getSumAnnualDataFromMonthly(DataItem[selectedDataType.value])[selectedTime] : null;
           }
         }
       };
 
       const density = getDensityFromData(feature.properties.NAME, dataView)
+
 
       return {
         fillColor: ColorLegendsDataItem ? fillDensityColor(ColorLegendsDataItem, density) : "none",
@@ -261,8 +265,8 @@ console.log(hydroclimaticStats)
       Yearly_AETI: getSumAnnualDataFromMonthly(SelectedFeaturesStatsData.AETI),
       Yearly_PCP: getSumAnnualDataFromMonthly(SelectedFeaturesStatsData.PCP),
       Yearly_RET: getSumAnnualDataFromMonthly(SelectedFeaturesStatsData.RET),
-      // Yearly_ETB: SelectedFeaturesStatsData.ETB,
-      // Yearly_ETG: SelectedFeaturesStatsData.ETG,
+      Yearly_ETB: SelectedFeaturesStatsData.ETB,
+      Yearly_ETG: SelectedFeaturesStatsData.ETG,
     }
     maxAETI = Math.max(...SelectedFeaturesStatsData.AETI);
     maxRET = Math.max(...SelectedFeaturesStatsData.RET);
@@ -270,6 +274,7 @@ console.log(hydroclimaticStats)
 
   }
 
+  console.log(TableAnnualData)
 
 
   return (
@@ -293,24 +298,13 @@ console.log(hydroclimaticStats)
                       <h4>Evapotranspiration and Ref. ET</h4>
                     </div>
 
-                    <div className='info_container'>
-                      
-                      <div className='heading_info_button'>
-                        <BsInfoCircleFill />
-                      </div>
-                      <div className='info_card_container'>
-                      <p>
-                            <strong> Evapotranspiration (ET)</strong> refers to the water that is lost to the atmosphere through the vaporisation process. Water that becomes evapotranspired is 
-                            no longer available for further use, hence it is commonly referred to as consumed water in the water accounting terminology. 
-                          </p>
-                        <p>
-                          <strong>  Reference evapotranspiration (RET) </strong>
-                           is a theoretical concept representing the rate of evapotranspiration from an extensive surface of 8 to 15 cm tall, green grass cover of uniform height, actively growing, completely shading the ground and not short of water (Doorenbos and Pruitt, 1977). 
-                          
-                        </p>
-
-                      </div>
+                    <div className='heading_info_button'
+                      onClick={handleET}
+                    >
+                      <BsInfoCircleFill />
                     </div>
+
+
                   </div>
 
 
@@ -369,6 +363,7 @@ console.log(hydroclimaticStats)
                           opposite: true,
                           title: {
                             text: 'Ref. ET (mm/month)',
+
                           },
                           labels: {
                             formatter: (val) => `${parseInt(val)}`, // Ensure labels are integers
@@ -384,7 +379,7 @@ console.log(hydroclimaticStats)
                           format: 'MMM yyyy'
                         },
 
-                        
+
                         y: [{
                           formatter: function (val) {
                             return `${val.toFixed(1)}`;
@@ -429,8 +424,8 @@ console.log(hydroclimaticStats)
                     tableHeaders={[
                       "Year",
                       "Total Evapotranspiration (BCM/year)",
-                      // "ET Blue (BCM/year)",
-                      // "ET Green (BCM/year)",
+                      "ET Blue (BCM/year)",
+                      "ET Green (BCM/year)",
                       "Precipitation (PCP) (BCM/year)",
                       "PCP - ET (BCM/year)",
                       "Portion of PCP consumed within the country (%)"
@@ -438,8 +433,8 @@ console.log(hydroclimaticStats)
                     tableBody={TableAnnualData.Year.map((year, index) => [
                       year,
                       (TableAnnualData.Yearly_AETI[index] * 0.001 * SelectedFeaturesStatsData.AREA / 1000000000).toFixed(1),
-                      // (TableAnnualData.Yearly_ETB[index] * 0.001 * SelectedFeaturesStatsData.AREA / 1000000000).toFixed(1),
-                      // (TableAnnualData.Yearly_ETG[index] * 0.001 * SelectedFeaturesStatsData.AREA / 1000000000).toFixed(1),
+                      (TableAnnualData.Yearly_ETB[index] * 0.001 * SelectedFeaturesStatsData.AREA / 1000000000).toFixed(1),
+                      (TableAnnualData.Yearly_ETG[index] * 0.001 * SelectedFeaturesStatsData.AREA / 1000000000).toFixed(1),
                       (TableAnnualData.Yearly_PCP[index] * 0.001 * SelectedFeaturesStatsData.AREA / 1000000000).toFixed(1),
                       ((TableAnnualData.Yearly_PCP[index] - TableAnnualData.Yearly_AETI[index]) * 0.001 * SelectedFeaturesStatsData.AREA / 1000000000).toFixed(2),
                       (TableAnnualData.Yearly_AETI[index] * 100 / TableAnnualData.Yearly_PCP[index]).toFixed(1)
@@ -457,17 +452,12 @@ console.log(hydroclimaticStats)
                         <h4>Average annual consumption per {dataView.toLowerCase()}</h4>
                       </div>
 
-                      <div className='info_container'>
+                      {/* <div className='info_container'>
                         <div className='heading_info_button'>
                           <BsInfoCircleFill />
                         </div>
-                        <div className='info_card_container'>
-                         <p>
-                         Average annual consumption per {dataView.toLowerCase()}
-                         </p>
-
-                        </div>
-                      </div>
+                        
+                      </div> */}
                     </div>
 
 
@@ -486,22 +476,12 @@ console.log(hydroclimaticStats)
                         <h4>Average annual unit consumption per {dataView.toLowerCase()}</h4>
                       </div>
 
-                      <div className='info_container'>
+                      {/* <div className='info_container'>
                         <div className='heading_info_button'>
                           <BsInfoCircleFill />
                         </div>
-                        <div className='info_card_container'>
-                          <p>
-                            <strong> Evapotranspiration (ET)</strong> is the combined process of water transfer from the Earth's surface to the atmosphere,
-                            encompassing both evaporation from open water bodies and soil surfaces as well as transpiration from plant leaves.
-                          </p>
-                          <p>
-                            <strong>  Reference evapotranspiration (RET)</strong> represents the rate at which water evaporates from a standardized reference
-                            crop under specified climatic conditions.
-                          </p>
-
-                        </div>
-                      </div>
+                        
+                      </div> */}
                     </div>
 
 
@@ -563,11 +543,11 @@ console.log(hydroclimaticStats)
                         </div>
                         <div className="accordion-item">
                           <h2 className="accordion-header" id="panelsStayOpen-headingTwo">
-                            <button className="accordion-button map_layer_collapse collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseTwo" aria-expanded="false" aria-controls="panelsStayOpen-collapseTwo">
+                            <button className="accordion-button map_layer_collapse" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseTwo" aria-expanded="true" aria-controls="panelsStayOpen-collapseTwo">
                               Raster layers
                             </button>
                           </h2>
-                          <div id="panelsStayOpen-collapseTwo" className="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingTwo">
+                          <div id="panelsStayOpen-collapseTwo" className="accordion-collapse collapse show" aria-labelledby="panelsStayOpen-headingTwo">
                             <div className="accordion-body map_layer_collapse_body">
                               {MapDataLayers.slice(0, 3).map((item, index) => (
                                 <div key={item.value} className="form-check">
@@ -636,42 +616,44 @@ console.log(hydroclimaticStats)
 
                     {selectedDataType.value === 'avg_aeti_raster' ? (
                       <>
-                         <WMSTileLayer
-                      attribution={selectedDataType.attribution}
-                      url={`${process.env.REACT_APP_GEOSERVER_URL}/geoserver/Kenya/wms`}
-                      params={{ LAYERS: '	Kenya:AETI_2018-2023_avg' }}
-                      version="1.1.0"
-                      transparent={true}
-                      format="image/png"
-                      key="avg_aeti_raster"
-                    />
-                    <PixelValue layername="AETI_2018-2023_avg" unit="mm/year" />
+                        <WMSTileLayer
+                          attribution={selectedDataType.attribution}
+                          url={`${process.env.REACT_APP_GEOSERVER_URL}/geoserver/Kenya/wms`}
+                          params={{ LAYERS: '	Kenya:AETI_2018-2023_avg' }}
+                          version="1.1.0"
+                          transparent={true}
+                          format="image/png"
+                          key="avg_aeti_raster"
+                          zIndex={3}
+                        />
+                        <PixelValue layername="AETI_2018-2023_avg" unit="mm/year" />
 
-                    <RasterLayerLegend
-                      layerName="AETI_2018-2023_avg"
-                      Unit="(mm/year)"
-                    />
+                        <GeoserverLegend
+                          layerName="AETI_2018-2023_avg"
+                          Unit="AETI (mm/year)"
+                        />
 
                       </>
 
                     ) : selectedDataType.value === 'avg_ret_raster' ? (
                       <>
-                       <WMSTileLayer
-                      attribution={selectedDataType.attribution}
-                      url={`${process.env.REACT_APP_GEOSERVER_URL}/geoserver/Kenya/wms`}
-                      params={{ LAYERS: '	Kenya:RET_2018-2023_avg' }}
-                      version="1.1.0"
-                      transparent={true}
-                      format="image/png"
-                      key="avg_ret_raster"
-                    />
+                        <WMSTileLayer
+                          attribution={selectedDataType.attribution}
+                          url={`${process.env.REACT_APP_GEOSERVER_URL}/geoserver/Kenya/wms`}
+                          params={{ LAYERS: '	Kenya:RET_2018-2023_avg' }}
+                          version="1.1.0"
+                          transparent={true}
+                          format="image/png"
+                          key="avg_ret_raster"
+                          zIndex={3}
+                        />
 
-                    <PixelValue layername="RET_2018-2023_avg" unit="mm/year" />
+                        <PixelValue layername="RET_2018-2023_avg" unit="mm/year" />
 
-                    <RasterLayerLegend
-                      layerName="RET_2018-2023_avg"
-                      Unit="(mm/year)"
-                    />
+                        <GeoserverLegend
+                          layerName="RET_2018-2023_avg"
+                          Unit="Ref. ET (mm/year)"
+                        />
 
 
 
@@ -689,12 +671,13 @@ console.log(hydroclimaticStats)
                           transparent={true}
                           format="image/png"
                           key="avg_pet_raster"
+                          zIndex={3}
                         />
                         <PixelValue layername="PET_2018-2023_avg" unit="mm/year" />
 
-                        <RasterLayerLegend
+                        <GeoserverLegend
                           layerName="PET_2018-2023_avg"
-                          Unit="(mm/year)"
+                          Unit="Potential ET (mm/year)"
                         />
 
 
@@ -703,21 +686,22 @@ console.log(hydroclimaticStats)
                     ) : selectedDataType.value === 'avg_pcp_et' ? (
                       <>
                         <WMSTileLayer
-                      attribution={selectedDataType.attribution}
-                      url={`${process.env.REACT_APP_GEOSERVER_URL}/geoserver/Kenya/wms`}
-                      params={{ LAYERS: '	Kenya:PCP-AETI_2018-2023_avg' }}
-                      version="1.1.0"
-                      transparent={true}
-                      format="image/png"
-                      key="avg_pcp_et"
-                    />
+                          attribution={selectedDataType.attribution}
+                          url={`${process.env.REACT_APP_GEOSERVER_URL}/geoserver/Kenya/wms`}
+                          params={{ LAYERS: '	Kenya:PCP-AETI_2018-2023_avg' }}
+                          version="1.1.0"
+                          transparent={true}
+                          format="image/png"
+                          key="avg_pcp_et"
+                          zIndex={3}
+                        />
 
-                    <PixelValue layername="PCP-AETI_2018-2023_avg" unit="mm/year" />
+                        <PixelValue layername="PCP-AETI_2018-2023_avg" unit="mm/year" />
 
-                    <RasterLayerLegend
-                      layerName="PCP-AETI_2018-2023_avg"
-                      Unit="(mm/year)"
-                    />
+                        <GeoserverLegend
+                          layerName="PCP-AETI_2018-2023_avg"
+                          Unit="P-ET (mm/year)"
+                        />
 
 
 
@@ -739,12 +723,12 @@ console.log(hydroclimaticStats)
                         <FiltereredDistrictsFeatures
                           DistrictStyle={DistrictStyle}
                           DistrictOnEachfeature={DistrictOnEachfeature}
-                          layerKey={selectedDataType.value + selectedTime + intervalType}
+                          layerKey={selectedDataType.value + selectedTime + intervalType + (hydroclimaticStats && hydroclimaticStats.length)}
                           attribution={selectedDataType.attribution}
                         />
 
                         {ColorLegendsDataItem && (
-                          <MapLegend ColorLegendsDataItem={ColorLegendsDataItem} />
+                          <DynamicLegend ColorLegendsDataItem={ColorLegendsDataItem} />
                         )}
 
                       </>

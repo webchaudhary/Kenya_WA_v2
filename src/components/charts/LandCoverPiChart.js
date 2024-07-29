@@ -16,7 +16,7 @@ const LandCoverPieChart = ({ landCoverValues, colorPallete, ClassesName }) => {
     },
     tooltip: {
       y: {
-        formatter: (value) => `${value.toFixed(0)} ha`
+     formatter: (value) => `${parseFloat(value.toFixed(0)).toLocaleString()} ha`
       }
     },
 

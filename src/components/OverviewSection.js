@@ -20,14 +20,12 @@ const OverviewSection = ({
 }) => {
 
 
-    console.log(hydroclimaticStats)
-
 
     let totalWeightedAETI = 0;
     let totalWeightedPCP = 0;
     let totalWeightedTBP = 0;
-    // let totalWeightedETG = 0;
-    // let totalWeightedETB = 0;
+    let totalWeightedETG = 0;
+    let totalWeightedETB = 0;
     let totalArea = 0;
 
 
@@ -35,8 +33,8 @@ const OverviewSection = ({
         totalWeightedAETI += calculateAverageOfArray(getSumAnnualDataFromMonthly(item.AETI))  * 0.001* item.AREA;
         totalWeightedPCP += calculateAverageOfArray(getSumAnnualDataFromMonthly(item.PCP))  * 0.001 * item.AREA;
         totalWeightedTBP += calculateAverageOfArray(getSumAnnualDataFromMonthly(item.TBP))* 0.001 * item.AREA;
-        // totalWeightedETG += calculateAverageOfArray(item.ETG) * 0.001* item.AREA;
-        // totalWeightedETB += calculateAverageOfArray(item.ETB) * 0.001* item.AREA ;
+        totalWeightedETG += calculateAverageOfArray(item.ETG) * 0.001* item.AREA;
+        totalWeightedETB += calculateAverageOfArray(item.ETB) * 0.001* item.AREA ;
         totalArea += item.AREA; 
     });
 
@@ -65,15 +63,15 @@ const OverviewSection = ({
     const WaterConsumption = (totalWeightedAETI/(totalArea*0.0001)).toFixed(2)
     const PCP_ETValue = ((totalWeightedPCP-totalWeightedAETI)/1000000000).toFixed(2)
     const BiomassProductionValue = (totalWeightedTBP*0.0001/1000000).toFixed(2)
-    // const BlueWaterFootprintValue = (totalWeightedETB/1000000000).toFixed(2)
-    // const GreenWaterFootprintValue = (totalWeightedETG/1000000000).toFixed(2)
+    const BlueWaterFootprintValue = (totalWeightedETB/1000000000).toFixed(2)
+    const GreenWaterFootprintValue = (totalWeightedETG/1000000000).toFixed(2)
 
 
     return (
         <div className='row'>
 
             <div className='col-md-2 col-sm-6 col-6 mb-2'>
-                <Link to="/land-classification">
+                <Link to="/lcc">
                     <div className='overview_icons'>
                         <img src={crop_land} alt='icons' />
                     </div>
@@ -99,12 +97,12 @@ const OverviewSection = ({
             <div className='col-md-4 col-sm-6 col-6 mb-2'>
                 <div className='overview_decsription'>
                     <h5>Area</h5>
-                    <p><span style={{ fontSize: "24px", color: "rgb(5, 45, 131)" }}>{AreaValue}</span> (1000 ha)</p>
+                    <p><span style={{ fontSize: "24px", color: "rgb(5, 45, 131)" }}>{parseFloat(AreaValue).toLocaleString()}</span> (1000 ha)</p>
                 </div>
             </div>
 
             <div className='col-md-2 col-sm-6 col-6 mb-2'>
-                <Link to="/evapotranspiration">
+                <Link to="/et">
                     <div className='overview_icons'>
                         <img src={evapotranspiration} alt='icons' />
                     </div>
@@ -114,14 +112,14 @@ const OverviewSection = ({
             <div className='col-md-4 col-sm-6 col-6 mb-2'>
                 <div className='overview_decsription'>
                     <h5>Evapotranspiration</h5>
-                    <p><span style={{ fontSize: "24px", color: "rgb(5, 45, 131)" }}>{EvapotranspirationValue}</span> (BCM/year)</p>
+                    <p><span style={{ fontSize: "24px", color: "rgb(5, 45, 131)" }}>{parseFloat(EvapotranspirationValue).toLocaleString()}</span> (BCM/year)</p>
                 </div>
             </div>
 
 
 
             <div className='col-md-2 col-sm-6 col-6 mb-2'>
-                <Link to="/land-classification">
+                <Link to="/lcc">
                     <div className='overview_icons'>
                         <img src={irrigated_land} alt='icons' />
                     </div>
@@ -131,12 +129,12 @@ const OverviewSection = ({
             <div className='col-md-4 col-sm-6 col-6 mb-2'>
                 <div className='overview_decsription'>
                     <h5>Total irrigated land</h5>
-                    <p><span style={{ fontSize: "24px", color: "rgb(5, 45, 131)" }}>{IrrigatedLandValue}</span>  (1000 ha)</p>
+                    <p><span style={{ fontSize: "24px", color: "rgb(5, 45, 131)" }}>{parseFloat(IrrigatedLandValue).toLocaleString()}</span>  (1000 ha)</p>
                 </div>
             </div>
 
             <div className='col-md-2 col-sm-6 col-6 mb-2'>
-                <Link to="/precipitation">
+                <Link to="/pcp">
                     <div className='overview_icons'>
                         <img src={precipitation_icon} alt='icons' />
                     </div>
@@ -146,7 +144,7 @@ const OverviewSection = ({
             <div className='col-md-4 col-sm-6 col-6 mb-2'>
                 <div className='overview_decsription'>
                     <h5>Precipitation</h5>
-                    <p><span style={{ fontSize: "24px", color: "rgb(5, 45, 131)" }}>{PrecipitationValue}</span> (BCM/year)</p>
+                    <p><span style={{ fontSize: "24px", color: "rgb(5, 45, 131)" }}>{parseFloat(PrecipitationValue).toLocaleString()}</span> (BCM/year)</p>
                 </div>
             </div>
 
@@ -161,12 +159,12 @@ const OverviewSection = ({
             <div className='col-md-4 col-sm-6 col-6 mb-2'>
                 <div className='overview_decsription'>
                     <h5>Unit water consumption</h5>
-                    <p><span style={{ fontSize: "24px", color: "rgb(5, 45, 131)" }}>{WaterConsumption}</span> (m³/ha)</p>
+                    <p><span style={{ fontSize: "24px", color: "rgb(5, 45, 131)" }}>{parseFloat(WaterConsumption).toLocaleString()}</span> (m³/ha)</p>
                 </div>
             </div>
 
             <div className='col-md-2 col-sm-6 col-6 mb-2'>
-                <Link to="/precipitation">
+                <Link to="/pcp">
                     <div className='overview_icons'>
                         <img src={pcp_et} alt='icons' />
                     </div>
@@ -195,7 +193,7 @@ const OverviewSection = ({
 
             <div className='col-md-2 col-sm-6 col-6 mb-2'>
                 <div className='overview_icons'>
-                    <Link to="/biomass">
+                    <Link to="/bp">
                         <img src={biomass} alt='icons' />
                     </Link>
                 </div>
@@ -208,8 +206,8 @@ const OverviewSection = ({
                 </div>
             </div>
 
-            {/* <div className='col-md-2 col-sm-6 col-6 mb-2'>
-                <Link to="/water-footprint">
+            <div className='col-md-2 col-sm-6 col-6 mb-2'>
+                <Link to="/wf">
                     <div className='overview_icons'>
                         <img src={blue_water} alt='icons' />
                     </div>
@@ -224,7 +222,7 @@ const OverviewSection = ({
             </div>
 
             <div className='col-md-2 col-sm-6 col-6 mb-2'>
-                <Link to="/water-footprint">
+                <Link to="/wf">
                     <div className='overview_icons'>
                         <img src={green_water} alt='icons' />
                     </div>
@@ -236,7 +234,7 @@ const OverviewSection = ({
                     <h5>Green water footprint</h5>
                     <p><span style={{ fontSize: "24px", color: "rgb(5, 45, 131)" }}>{GreenWaterFootprintValue}</span> (BCM/year)</p>
                 </div>
-            </div> */}
+            </div>
 
 
 

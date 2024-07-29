@@ -82,23 +82,15 @@ const BenchmarkPage = () => {
                         <div className="left_panel_equal">
                             <div className="card_container">
 
-                  <div className='card_heading_container'>
-                    <div className='card_heading'>
-                    <h4>Benchmarks</h4>
-                    </div>
+                                <div className='card_heading_container'>
+                                    <div className='card_heading'>
+                                        <h4>Benchmarks</h4>
+                                    </div>
 
-                    <div className='info_container'>
-                      <div className='heading_info_button'>
-                        <BsInfoCircleFill />
-                      </div>
-                      <div className='info_card_container'>
-                        <p>Benchmark AETI, PCP, BP, WP data of countries.</p>
 
-                      </div>
-                    </div>
-                  </div>
+                                </div>
 
-        
+
                                 <div className='item_table_container' style={{ maxHeight: "100%" }}>
                                     <table className='item_table'>
                                         <thead>

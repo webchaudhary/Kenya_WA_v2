@@ -55,10 +55,8 @@ const FiltereredDistrictsFeatures = ({ DistrictStyle, DistrictOnEachfeature, lay
     return (
         <Pane name="selected_districts">
             <GeoJSON
-                // key={selectedDataType.value + selectedTime + intervalType }
-                key={`${layerKey} +${dataView}+${selectedFeatureName}`}
+                key={`${layerKey}+${selectedFeatureName}+${selectedView}`}
                 // style={{ fillColor: 'none', weight: 4, color: 'yellow', fillOpacity: "0.4" }}
-                // data={selectedFeatureData}
                 data={selectedFeatureData}
                 style={DistrictStyle}
                 onEachFeature={DistrictOnEachfeature}

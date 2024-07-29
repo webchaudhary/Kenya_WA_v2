@@ -41,8 +41,8 @@ export const DataManualResources=[
     // },
     {
         "Dataset":"Evapotranspiration (ET)",
-        "Source":"<ol> <li>WaPOR L1 V3</li> <li>Landsat (GEE)</li> </ol>",
-        "PeriodOfAvailablity":"<ol> <li>2018 - 2023</li> <li>2017 - 2023</li> </ol>",
+        "Source":"WaPOR L1 V3",
+        "PeriodOfAvailablity":"2018 - 2023",
         "SpatialResolution":"300 m",
         "DataDescription":"Evapotranspiration (ET) is the combined process of water transfer from the Earth's surface to the atmosphere, encompassing both evaporation from open water bodies and soil surfaces as well as transpiration from plant leaves. Evaporation occurs as water changes from liquid to vapor with the aid of solar energy, while transpiration involves plants absorbing water through roots, transporting it through their tissues, and releasing it into the air through leaf stomata. Water that becomes evapotranspired is no longer available for further use, hence it is commonly referred to as consumed water in the water accounting terminology. In this dashboard ET data acquired from two sources, WaPOR and Landsat.",
         "SourceLink":"https://www.fao.org/in-action/remote-sensing-for-water-productivity/wapor-data/en",

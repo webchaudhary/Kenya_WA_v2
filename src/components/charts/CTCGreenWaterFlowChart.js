@@ -27,12 +27,12 @@ const CTCGreenWaterFlowChart = ({WaterFlowsC2CMatrix}) => {
     // Create series data for chart
     const series = [
         {
-            name: 'Virtual water transfer from AFG',
+            name: 'Virtual water transfer from Kenya',
             data: topCountries.map(country => country.Export).concat(otherCountries_Export_Total),
             color: '#87A922'
         },
         {
-            name: 'Virtual water transfer to AFG ',
+            name: 'Virtual water transfer to Kenya ',
             data: topCountries.map(country => country.Import).concat(otherCountries_Import_Total),
             color: '#114232'
         },
@@ -85,6 +85,11 @@ const CTCGreenWaterFlowChart = ({WaterFlowsC2CMatrix}) => {
                         title: {
                             text: `Country-to-Country Green Water Flow (MCM/year)`,
                             offsetX: 10,
+                        },
+                        labels: {
+                            formatter: function (value) {
+                                return parseFloat(value).toLocaleString();
+                            }
                         },
                     },
                     yaxis: {

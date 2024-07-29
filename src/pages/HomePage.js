@@ -19,13 +19,18 @@ import SelectedFeatureHeading from '../components/SelectedFeatureHeading.js';
 import axios from 'axios';
 import { useLoaderContext } from '../contexts/LoaderContext.js';
 
+
 const HomePage = () => {
     const [selectedBasemapLayer, setSelectedBasemapLayer] = useState(BaseMapsLayers[0]);
     const { selectedView, setSelectedView, selectedFeatureName, setSelectedFeatureName, dataView, setDataView } = useSelectedFeatureContext();
     const [landCoverStats, setLandCoverStats] = useState(null); // Correctly declare state variables.
     const [hydroclimaticStats, setHydroclimaticStats] = useState(null);
 
+
     const { setIsLoading } = useLoaderContext();
+
+
+ 
 
     const handleBasemapSelection = (e) => {
         const selectedItem = BaseMapsLayers.find((item) => item.name === e.target.value);
@@ -170,10 +175,7 @@ const HomePage = () => {
                         )}
                     </div>
 
-
-
-
-
+                    
 
                 </div>
 

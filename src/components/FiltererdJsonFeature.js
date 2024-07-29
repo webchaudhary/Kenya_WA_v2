@@ -5,10 +5,9 @@ import { mapCenter, setDragging, setInitialMapZoom } from '../helpers/mapFunctio
 
 import { useSelectedFeatureContext } from '../contexts/SelectedFeatureContext';
 import Kenya_boundary from '../assets/data/shapefiles/Kenya_boundary.json';
-// import AFG_districts from '../assets/data/shapefiles/AFG_districts.json';
 import Kenya_counties from '../assets/data/shapefiles/Kenya_counties.json';
 import Kenya_water_basin from '../assets/data/shapefiles/Kenya_water_basin.json';
-// import AFG_water_basin from '../assets/data/shapefiles/AFG_water_basin.json';
+
 
 const FiltererdJsonFeature = () => {
     const { selectedView, selectedFeatureName } = useSelectedFeatureContext();
@@ -20,12 +19,8 @@ const FiltererdJsonFeature = () => {
         switch (selectedView) {
             case 'BASIN':
                 return Kenya_water_basin.features.find(feature => feature.properties.NAME === selectedFeatureName);
-            // case 'WATERSHED':
-            //     return AFG_watershed.features.find(feature => feature.properties.NAME === selectedFeatureName);
             case 'COUNTY':
                 return Kenya_counties.features.find(feature => feature.properties.NAME === selectedFeatureName);
-            // case 'DISTRICT':
-            //     return AFG_districts.features.find(feature => feature.properties.NAME === selectedFeatureName);
             case 'COUNTRY':
                 return Kenya_boundary.features.find(feature => feature.properties.NAME === selectedFeatureName);
             default:

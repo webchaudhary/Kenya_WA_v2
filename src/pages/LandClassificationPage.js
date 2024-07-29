@@ -19,12 +19,13 @@ import { useLoaderContext } from '../contexts/LoaderContext.js';
 import Preloader from '../components/Preloader.js';
 import TableView from '../components/TableView.js';
 import { BsInfoCircleFill } from 'react-icons/bs';
-import RasterLayerLegend from '../components/RasterLayerLegend.js';
+import GeoserverLegend from '../components/legend/GeoserverLegend.js';
+import { useModalHandles } from '../components/ModalHandles.js';
 
 const MapDataLayers = [
 
   {
-    name: "ESA LCC",
+    name: "ESA LCC 2021",
     value: "ESA_lcc",
     legend: "",
     attribution: 'Data Source: <a href="https://esa-worldcover.org/en/data-access" target="_blank">ESA WorldCover</a>'
@@ -33,7 +34,7 @@ const MapDataLayers = [
     name: "WaPOR LCC",
     value: "wapor_lcc",
     legend: "",
-    attribution: 'Data Source: <a href="https://www.sciencedirect.com/science/article/pii/S2352340924002853?via%3Dihub" target="_blank">Afghanistan Land cover</a>'
+    attribution: 'Data Source: <a href="https://data.apps.fao.org/catalog//iso/69be3461-320f-40a6-93d7-fa4ed3db77d1" target="_blank">WaPOR v2 (Africa and Near East - Annual - 100m)</a>'
   },
 
 ]
@@ -50,6 +51,7 @@ const LandClassificationPage = () => {
   const [waterProductivityStats, setWaterProductivityStats] = useState(null);
 
 
+  const { handleLCC } = useModalHandles();
   const [selectedYear, setSelectedYear] = useState('2023');
 
   const handleYearSelection = (e) => {
@@ -141,85 +143,17 @@ const LandClassificationPage = () => {
 
 
 
-  // function DistrictOnEachfeature(feature, layer) {
-  //   layer.on('mouseover', function (e) {
-  //     const DataItem = HydroclimaticStats.find(item => item.DISTRICT === feature.properties.DISTRICT);
-
-  //     const initialData = [
-  //       { label: 'Tree cover', value: Math.round(DataItem.Trees), color: '#006400' },
-  //       { label: 'Shrubland', value: Math.round(DataItem.Shrubland), color: '#FFBB23' },
-  //       { label: 'Grassland', value: Math.round(DataItem.Grassland), color: '#FFFF4C' },
-  //       { label: 'Cropland', value: Math.round(DataItem.Cropland), color: '#F096FF' },
-  //       { label: 'Built-up', value: Math.round(DataItem.Builtup), color: '#FA0100' },
-  //       { label: 'Bare/sparse vegetation', value: Math.round(DataItem.Bare_Sparse_vegetation), color: '#B4B4B4' },
-  //       { label: 'Snow and ice', value: Math.round(DataItem.Snow_and_ice), color: '#F0F0F0' },
-  //       { label: 'Permanent water bodies', value: Math.round(DataItem.Permanent_water_bodies), color: '#0064C8' },
-  //       { label: 'Herbaceous wetland', value: Math.round(DataItem.Herbaceous_wetland), color: '#0096A0' },
-  //       { label: 'Mangroves', value: 0, color: '#04CF75' },  // Assuming 'Mangroves' data is not available
-  //       { label: 'Mangroves', value: Math.round(DataItem.Moss_and_lichen), color: '#FAE69F' }
-  //     ];
-
-  //     // Calculate total area
-  //     const totalArea = initialData.reduce((sum, item) => sum + item.value, 0);
-
-  //     // Convert values to percentages
-  //     initialData.forEach(item => {
-  //       item.value = ((item.value / totalArea) * 100).toFixed(2);  // Keep two decimal places
-  //     });
-
-  //     // Sort and slice to get top 5
-  //     const sortedData = initialData.sort((a, b) => b.value - a.value).slice(0, 5);
-
-  //     // Calculate the sum of the remaining percentages
-  //     const otherPercentage = initialData.filter(item => !sortedData.includes(item)).reduce((sum, current) => sum + parseFloat(current.value), 0).toFixed(2);
-
-  //     // Add 'Other Land' if there are remaining percentages
-  //     if (otherPercentage > 0) {
-  //       sortedData.push({ label: 'Other Land', value: otherPercentage, color: '#000000' });  // Black color for 'Other Land'
-  //     }
-
-  //     // SVG dimensions
-  //     const width = 400;
-  //     const barHeight = 15;
-  //     const gap = 5;
-  //     const chartHeight = sortedData.length * (barHeight + gap);
-
-  //     let svgContent = '<svg width="' + width + '" height="' + chartHeight + '" xmlns="http://www.w3.org/2000/svg">';
-
-  //     const maxValue = Math.max(...sortedData.map(item => parseFloat(item.value)));
-  //     sortedData.forEach((item, index) => {
-  //       const barWidth = (parseFloat(item.value) / maxValue) * (width - 100); // Scale the bar width
-  //       const y = index * (barHeight + gap);
-  //       svgContent += `<rect x="100" y="${y}" width="${barWidth}" height="${barHeight}" fill="${item.color}" />`;
-  //       svgContent += `<text x="95" y="${y + 15}" alignment-baseline="middle" text-anchor="end" fill="black" font-size="12">${item.label}</text>`;
-  //       svgContent += `<text x="${100 + barWidth + 5}" y="${y + 15}" alignment-baseline="middle" fill="black" font-size="12">${item.value}%</text>`;
-  //     });
-
-  //     svgContent += '</svg>';
-
-  //     const popupContent = `<div>
-  //       District: ${feature.properties.DISTRICT}<br/>
-  //       ${svgContent}
-  //     </div>`;
-
-  //     layer.bindTooltip(popupContent, { sticky: true });
-  //     layer.openTooltip();
-  //   });
-
-  //   layer.on('mouseout', function () {
-  //     layer.closeTooltip();
-  //   });
-  // }
-
-
 
   function DistrictOnEachfeature(feature, layer) {
 
-    const DataItem = landCoverStats && landCoverStats.find(item => item[dataView] === feature.properties.NAME);
-    // console.log(DataItem)
 
+    const DataItem = landCoverStats && landCoverStats.find(item => item[dataView] === feature.properties.NAME);
+
+    // console.log("DataItem",DataItem)
     if (DataItem) {
+
       layer.on('mouseover', function (e) {
+
 
         let initialData;
 
@@ -255,10 +189,6 @@ const LandClassificationPage = () => {
           ];
 
         }
-
-
-
-
 
 
         // Define colors, labels, and their corresponding data values
@@ -339,35 +269,6 @@ const LandClassificationPage = () => {
 
 
 
-  // function DistrictOnEachfeature(feature, layer) {
-
-  //   layer.on('mouseover', function (e) {
-  //     const DataItem = HydroclimaticStats.find(item => item.DISTRICT === feature.properties.DISTRICT);
-
-  //     const popupContent = `
-  //           <div>
-  //             District: ${feature.properties.DISTRICT}<br/>
-  //             Trees: ${DataItem.Trees} ha<br/>
-  //             Shrubland: ${DataItem.Shrubland} ha<br/>
-  //             Grassland: ${DataItem.Grassland} ha<br/>
-  //             Cropland: ${DataItem.Cropland} ha<br/>
-  //             Builtup: ${DataItem.Builtup} ha<br/>
-  //             Bare, Sparse vegetation: ${DataItem.Bare_Sparse_vegetation} ha<br/>
-  //             Snow and Ice: ${DataItem.Snow_and_ice} ha<br/>
-  //             Permanent water bodies: ${DataItem.Permanent_water_bodies} ha<br/>
-  //             Herbaceous wetland: ${DataItem.Herbaceous_wetland} ha<br/>
-  //             Mangroves: ${DataItem.Moss_and_lichen} ha<br/>
-  //           </div>
-  //         `;
-  //     layer.bindTooltip(popupContent, { sticky: true });
-  //     layer.openTooltip();
-  //   });
-
-  //   layer.on('mouseout', function () {
-  //     layer.closeTooltip();
-  //   });
-  // }
-
   return (
     <>
       {SelectedFeaturesStatsData && croplandStats ? (
@@ -385,23 +286,12 @@ const LandClassificationPage = () => {
                   </div>
 
                   <div className='info_container'>
-                    <div className='heading_info_button'>
+                    <div className='heading_info_button' onClick={handleLCC}>
                       <BsInfoCircleFill />
                     </div>
-                    <div className='info_card_container'>
-                      <p>
-                        WorldCover provides the first global land cover products for 2020 and 2021 at 10 m resolution, developed and validated in near-real time based on Sentinel-1 and Sentinel-2 data.
 
-                      </p>
-
-
-                    </div>
                   </div>
                 </div>
-
-
-
-
 
 
                 {selectedDataType.value === "ESA_lcc" ? (
@@ -460,17 +350,12 @@ const LandClassificationPage = () => {
                     <h4>Landcover classes area by {dataView.toLowerCase()}</h4>
                   </div>
 
-                  <div className='info_container'>
+                  {/* <div className='info_container'>
                     <div className='heading_info_button'>
                       <BsInfoCircleFill />
                     </div>
-                    <div className='info_card_container'>
-                      <p>
-                        Landcover classes area by {dataView.toLowerCase()}
-                      </p>
-
-                    </div>
-                  </div>
+            
+                  </div> */}
                 </div>
                 {/* ["Snow",	"Builtup area",	"Water body",	"Forest",	"Irrigated agriculture"	"Rainfed agriculture",	"Fruit trees",	
                 "Vineyards",	"Marshland",	"Bare land",	"Rangeland",	"Sand cover",	"Streams"] */}
@@ -496,16 +381,16 @@ const LandClassificationPage = () => {
                       ]}
                       tableBody={landCoverStats && landCoverStats.map(item => [
                         item[dataView],
-                        item.ESA_Landcover[0].toFixed(0),
-                        item.ESA_Landcover[1].toFixed(0),
-                        item.ESA_Landcover[2].toFixed(0),
-                        item.ESA_Landcover[3].toFixed(0),
-                        item.ESA_Landcover[4].toFixed(0),
-                        item.ESA_Landcover[5].toFixed(0),
-                        item.ESA_Landcover[6].toFixed(0),
-                        item.ESA_Landcover[7].toFixed(0),
-                        item.ESA_Landcover[8].toFixed(0),
-                        item.ESA_Landcover[9].toFixed(0),
+                        parseFloat(item.ESA_Landcover[0].toFixed(0)).toLocaleString(),
+                        parseFloat(item.ESA_Landcover[1].toFixed(0)).toLocaleString(),
+                        parseFloat(item.ESA_Landcover[2].toFixed(0)).toLocaleString(),
+                        parseFloat(item.ESA_Landcover[3].toFixed(0)).toLocaleString(),
+                        parseFloat(item.ESA_Landcover[4].toFixed(0)).toLocaleString(),
+                        parseFloat(item.ESA_Landcover[5].toFixed(0)).toLocaleString(),
+                        parseFloat(item.ESA_Landcover[6].toFixed(0)).toLocaleString(),
+                        parseFloat(item.ESA_Landcover[7].toFixed(0)).toLocaleString(),
+                        parseFloat(item.ESA_Landcover[8].toFixed(0)).toLocaleString(),
+                        parseFloat(item.ESA_Landcover[9].toFixed(0)).toLocaleString(),
 
                       ])}
                     />
@@ -554,17 +439,7 @@ const LandClassificationPage = () => {
                     <h4>Cropland classes area by {dataView.toLowerCase()}</h4>
                   </div>
 
-                  <div className='info_container'>
-                    <div className='heading_info_button'>
-                      <BsInfoCircleFill />
-                    </div>
-                    <div className='info_card_container'>
-                      <p>
-                        Cropland classes area by {dataView.toLowerCase()}
-                      </p>
-
-                    </div>
-                  </div>
+                  
                 </div>
 
 
@@ -619,31 +494,20 @@ const LandClassificationPage = () => {
 
 
 
-              {waterProductivityStats && (
+              {/*     {waterProductivityStats && (
                 <div className='card_container'>
 
-                  {/* <div className='card_heading_container'>
+                  <div className='card_heading_container'>
                     <div className='card_heading'>
                       <h4>Irrigated/Rainfed area by {dataView.toLowerCase()}</h4>
                     </div>
 
-                    <div className='info_container'>
-                      <div className='heading_info_button'>
-                        <BsInfoCircleFill />
-                      </div>
-                      <div className='info_card_container'>
-                        <p>
-                          The Landsat-Derived Global Rainfed and Irrigated-Cropland Product (LGRIP) maps the world’s agricultural lands by dividing them into irrigated and rainfed croplands. The data is produced using Landsat 8 time-series satellite sensor data for the 2014-2017 time period to create a nominal 2015 product.
-                        </p>
-
-
-                      </div>
-                    </div>
-                  </div> */}
+                    
+                  </div>
 
 
 
-                  {/* <div className='item_table_container'>
+              <div className='item_table_container'>
                     <table className='item_table'>
                       <thead>
 
@@ -689,7 +553,7 @@ const LandClassificationPage = () => {
                       </tbody>
                     </table>
 
-                  </div> */}
+                  </div>
 
 
 
@@ -699,11 +563,12 @@ const LandClassificationPage = () => {
 
               )}
 
-
+ */}
 
 
 
             </div>
+
 
 
             <div className='right_panel_equal' >
@@ -757,11 +622,11 @@ const LandClassificationPage = () => {
                       </div>
                       <div className="accordion-item">
                         <h2 className="accordion-header" id="panelsStayOpen-headingTwo">
-                          <button className="accordion-button map_layer_collapse collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseTwo" aria-expanded="false" aria-controls="panelsStayOpen-collapseTwo">
+                          <button className="accordion-button map_layer_collapse " type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseTwo" aria-expanded="true" aria-controls="panelsStayOpen-collapseTwo">
                             Raster Layers
                           </button>
                         </h2>
-                        <div id="panelsStayOpen-collapseTwo" className="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingTwo">
+                        <div id="panelsStayOpen-collapseTwo" className="accordion-collapse collapse show" aria-labelledby="panelsStayOpen-headingTwo">
                           <div className="accordion-body map_layer_collapse_body">
 
                             {MapDataLayers.map((item, index) => (
@@ -803,7 +668,7 @@ const LandClassificationPage = () => {
                   <FiltereredDistrictsFeatures
                     // DistrictStyle={DistrictStyle}
                     attribution={selectedDataType.attribution}
-                    layerKey={selectedDataType.value}
+                    layerKey={selectedDataType.value + (landCoverStats && landCoverStats.length)}
                     DistrictStyle={{
                       fillColor: 'black',
                       weight: 2,
@@ -827,10 +692,11 @@ const LandClassificationPage = () => {
                         transparent={true}
                         format="image/png"
                         key="wapor_lcc"
+                        zIndex={3}
                       />
 
 
-                      <RasterLayerLegend
+                      <GeoserverLegend
                         layerName="Kenya_WaPOR_LCC"
                         Unit=""
                       />
@@ -848,15 +714,12 @@ const LandClassificationPage = () => {
                         transparent={true}
                         format="image/png"
                         key="ESA_lcc"
+                        zIndex={3}
                       />
-                      <RasterLayerLegend
+                      <GeoserverLegend
                         layerName="ESA_WorldCover"
                         Unit=""
                       />
-
-
-
-
                     </>
 
                   ) : null}

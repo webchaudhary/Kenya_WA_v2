@@ -16,17 +16,7 @@ const DataDownloadPage = () => {
 
                 </div>
 
-                {/* <div className="left_panel_equal">
-                    <div className="card_container">
-                        <div className="defination_container">
-                            <h4>Afghanistan</h4>
-                        </div>
 
-
-                    </div>
-
-                
-                </div> */}
 
             </div>
         </div>

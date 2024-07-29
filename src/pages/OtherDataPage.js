@@ -11,22 +11,20 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-fullscreen/dist/Leaflet.fullscreen.js";
 import "leaflet-fullscreen/dist/leaflet.fullscreen.css";
 import { BaseMapsLayers, mapCenter, maxBounds, pngRasterBounds, setDragging, setInitialMapZoom } from '../helpers/mapFunction';
-import hydronomic_zones from "../assets/legends/hydronomic_zones.jpg"
+
 
 import irrigated_rainfed from "../assets/legends/irrigated_rainfed.jpg";
-import cropping_intensity_legend from "../assets/legends/cropping_intensity_legend.jpg";
-import global_glacier_legend from "../assets/legends/global_glacier_legend.jpg"
 import surface_water_legend from "../assets/legends/surface_water_legend.jpg"
 import reservoirs_dams_legend from "../assets/legends/reservoirs_dams_legend.jpg"
-import global_population_legend from "../assets/legends/global_population_legend.jpg"
 
 import Kenya_boundary from '../assets/data/shapefiles/Kenya_boundary.json';
 import Kenya_counties from '../assets/data/shapefiles/Kenya_counties.json';
 import Kenya_water_basin from '../assets/data/shapefiles/Kenya_water_basin.json';
 
 import BaseMap from "../components/BaseMap";
-import RasterLayerLegend from "../components/RasterLayerLegend";
-import PixelValue from "./PixelValue";
+import GeoserverLegend from "../components/legend/GeoserverLegend.js";
+import PixelValue from "../contexts/PixelValue.js";
+import ImageLegend from "../components/legend/ImageLegend.js";
 
 
 
@@ -40,12 +38,6 @@ const RasterLayersOptions = [
         attribution: 'Data Source: <a href="https://doi.org/10.5066/P9N4R7SF" target="_blank">Rainfed and Irrigated Cropland Areas for Africa</a>'
     },
 
-    // {
-    //     name: 'Hydronomic zoning',
-    //     value: 'hydronomic_zones',
-    //     legend: "",
-    //     attribution: ''
-    // },
 
     {
         name: 'Cropping Intensity',
@@ -185,9 +177,9 @@ const OtherDataPage = () => {
                                         ))}
                                         <div className="input_range_container">
                                             <div className="input_range_label">
-                                                <p>0</p>
+                                                <p>0%</p>
                                                 <p>Layer Opacity</p>
-                                                <p>100</p>
+                                                <p>100%</p>
                                             </div>
                                             <input
 
@@ -252,7 +244,7 @@ const OtherDataPage = () => {
                             }}
                             zoom={setInitialMapZoom()}
                             maxBounds={maxBounds}
-                            minZoom={setInitialMapZoom()-1}
+                            minZoom={setInitialMapZoom() - 1}
                             keyboard={false}
                             dragging={setDragging()}
                             // attributionControl={false}
@@ -276,22 +268,19 @@ const OtherDataPage = () => {
                                         <p>Irrigated/Rainfed</p>
                                     </div>
 
-                                    
+                                    <ImageLegend
+                                    legend_image={irrigated_rainfed}
+                                    Unit=""/>
 
-                                    {/* <div className="legend-panel" style={{ width: "180px" }}>
-                                        <img
-                                            src={irrigated_rainfed_cropland_area_legend}
-                                            alt="Legend_Img"
 
-                                        />
-                                    </div> */}
 
-                                    <div className='legend-panel'>
+                                    {/* <div className='legend-panel'>
                                         <img src={irrigated_rainfed} alt='worldcover_Legend' />
-                                    </div>
+                                    </div> */}
 
 
                                     <WMSTileLayer
+                                        opacity={rasterLayerOpacity}
                                         attribution={selectedRasterLayer.attribution}
                                         url={`${process.env.REACT_APP_GEOSERVER_URL}/geoserver/Kenya/wms`}
                                         params={{ LAYERS: '	Kenya:Kenya_irrigated_rainfed' }}
@@ -299,13 +288,9 @@ const OtherDataPage = () => {
                                         transparent={true}
                                         format="image/png"
                                         key="Irrigated_Rainfed"
+                                        zIndex={3}
                                     />
-                                    {/* <RasterLayerLegend
-                                        layerName="Kenya_irrigated_rainfed"
-                                        Unit=""
-                                    /> */}
-
-
+                   
 
                                 </>
                             ) : selectedRasterLayer.value === "crop_intensity" ? (
@@ -314,6 +299,7 @@ const OtherDataPage = () => {
                                         <p>Crop Intensity</p>
                                     </div>
                                     <WMSTileLayer
+                                        opacity={rasterLayerOpacity}
                                         key="crop_intensity"
                                         attribution={selectedRasterLayer.attribution}
                                         url={`${process.env.REACT_APP_GEOSERVER_URL}/geoserver/Kenya/wms`}
@@ -321,48 +307,24 @@ const OtherDataPage = () => {
                                         version="1.1.0"
                                         transparent={true}
                                         format="image/png"
+                                        zIndex={3}
                                     />
-                                     <RasterLayerLegend
-                          layerName="Kenya_Cropping_Intensity_2016-2018_Avg"
-                          Unit=""
-                        />
+                                    <GeoserverLegend
+                                        layerName="Kenya_Cropping_Intensity_2016-2018_Avg"
+                                        Unit=""
+                                    />
 
 
 
                                 </>
-                            ) : selectedRasterLayer.value === "hydronomic_zones" ? (
-                                <>
-                                    <div className='map_heading'>
-                                        <p>Crop Intensity</p>
-                                    </div>
-                                    <WMSTileLayer
-                      attribution={selectedRasterLayer.attribution}
-                      url={`${process.env.REACT_APP_GEOSERVER_URL}/geoserver/Kenya/wms`}
-                      params={{ LAYERS: '	Kenya:kenya_zoning_nw_v3_nw1' }}
-                      version="1.1.0"
-                      transparent={true}
-                      format="image/png"
-                      key="avg_aeti_raster"
-                    />
-
-
-                    <div className="legend-panel" style={{ width: "280px" }}>
-                      <img
-                        src={hydronomic_zones}
-                        alt="Legend_Img"
-                      />
-                    </div>
-
-
-
-                                </>
-                            ) : selectedRasterLayer.value === "population_density" ? (
+                            )  : selectedRasterLayer.value === "population_density" ? (
                                 <>
                                     <div className='map_heading'>
                                         <p>Population Density</p>
                                     </div>
 
                                     <WMSTileLayer
+                                        opacity={rasterLayerOpacity}
                                         attribution={selectedRasterLayer.attribution}
                                         url={`${process.env.REACT_APP_GEOSERVER_URL}/geoserver/Kenya/wms`}
                                         params={{ LAYERS: 'Kenya:Population_Density' }}
@@ -370,10 +332,11 @@ const OtherDataPage = () => {
                                         transparent={true}
                                         format="image/png"
                                         key="elevation"
+                                        zIndex={3}
                                     />
                                     <PixelValue layername="Population_Density" unit="persons/sq km" />
 
-                                    <RasterLayerLegend
+                                    <GeoserverLegend
                                         layerName="Population_Density"
                                         Unit="(persons/sq km)"
                                     />
@@ -393,6 +356,7 @@ const OtherDataPage = () => {
                                         version="1.1.1"
                                         // transparent={true}
                                         format="image/png"
+                                        zIndex={3}
                                     /> */}
                                     {/* <div className="legend-panel" style={{ width: "150px" }}>
                                         <img
@@ -408,7 +372,7 @@ const OtherDataPage = () => {
                                     </div>
                                     <WMSTileLayer
                                         opacity={rasterLayerOpacity}
-                                        zIndex={10}
+
                                         key="global_dams_reservoirs"
                                         attribution={selectedRasterLayer.attribution}
                                         url="https://sedac.ciesin.columbia.edu/geoserver/wms"
@@ -417,16 +381,18 @@ const OtherDataPage = () => {
                                         version="1.1.1"
                                         // transparent={true}
                                         format="image/png"
+                                        zIndex={3}
                                     />
-                                    <div className="legend-panel" style={{ width: "150px" }}>
-                                        <img
-                                            src={reservoirs_dams_legend}
-                                            alt="Legend_Img"
-                                        />
-                                    </div>
+
+<ImageLegend
+                                    legend_image={reservoirs_dams_legend}
+                                    Unit=""/>
+
+
+                
 
                                 </>
-                            ) 
+                            )
                                 : selectedRasterLayer.value === "elevation" ? (
                                     <>
                                         <div className='map_heading'>
@@ -434,6 +400,7 @@ const OtherDataPage = () => {
                                         </div>
 
                                         <WMSTileLayer
+                                            opacity={rasterLayerOpacity}
                                             attribution={selectedRasterLayer.attribution}
                                             url={`${process.env.REACT_APP_GEOSERVER_URL}/geoserver/Kenya/wms`}
                                             params={{ LAYERS: 'Kenya:Kenya_DEM' }}
@@ -441,6 +408,7 @@ const OtherDataPage = () => {
                                             transparent={true}
                                             format="image/png"
                                             key="elevation"
+                                            zIndex={3}
                                         />
                                         <PixelValue layername="Kenya_DEM" unit="m" />
 
@@ -451,9 +419,10 @@ const OtherDataPage = () => {
                                             attribution="Data Source: <a href='https://www.terrestris.de/en/hoehenmodell-srtm30-wms/' target='_blank'>Terrestris</a>"
                                             layers={"SRTM30-Colored"}
                                             url="https://ows.terrestris.de/osm/service?"
+                                            zIndex={3}
                                         /> */}
 
-                                        <RasterLayerLegend
+                                        <GeoserverLegend
                                             layerName="Kenya_DEM"
                                             Unit=""
                                         />
@@ -477,9 +446,13 @@ const OtherDataPage = () => {
                                             url="https://storage.googleapis.com/global-surface-water/tiles2021/transitions/{z}/{x}/{y}.png"
 
                                         />
-                                        <div className='legend-panel' style={{ width: "220px" }}>
-                                            <img src={surface_water_legend} alt='Legend_Img' />
-                                        </div>
+
+<ImageLegend
+                                    legend_image={surface_water_legend}
+                                    Unit=""/>
+
+
+                    
                                     </>
                                 ) : (
                                     null

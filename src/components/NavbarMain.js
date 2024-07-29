@@ -80,19 +80,25 @@ const NavbarMain = () => {
                                     Water Footprint
                                 </NavLink>
 
-                                {/* <NavLink
+                                <NavLink
                                     className={({ isActive }) => (isActive ? 'active_nav' : 'nav__item')}
-                                    to="/water-productivity" onClick={handleLinkClick}>
+                                    to="/wp" onClick={handleLinkClick}>
                                     Water Productivity
                                 </NavLink>
 
-                                {(selectedFeatureName === "Afghanistan" || selectedFeatureName === "All") && (
+                                {(selectedFeatureName === "Kenya" || selectedFeatureName === "All") && (
                                     <NavLink
                                         className={({ isActive }) => (isActive ? 'active_nav' : 'nav__item')}
-                                        to="/virtual-water" onClick={handleLinkClick}>
+                                        to="/vw" onClick={handleLinkClick}>
                                         Virtual Water
                                     </NavLink>
-                                )} */}
+                                )}
+
+
+
+
+                                {/* 
+
 
                                 {/* <div className='dropdown_nav_container'>
                                     <div className={`dropdown_nav ${collapseName === 'water' ? 'active_nav' : 'nav__item'}`} >
@@ -123,11 +129,11 @@ const NavbarMain = () => {
                                     Hydronomic zones
                                 </NavLink>
 
-                                {/* <NavLink
+                            <NavLink
                                     className={({ isActive }) => (isActive ? 'active_nav' : 'nav__item')}
-                                    to="/drought-conditions" onClick={handleLinkClick}>
+                                    to="/dc" onClick={handleLinkClick}>
                                     Drought Condition
-                                </NavLink>
+                                </NavLink> 
 
                                 <NavLink
                                     className={({ isActive }) => (isActive ? 'active_nav' : 'nav__item')}
@@ -135,7 +141,7 @@ const NavbarMain = () => {
                                     Climate Change
                                 </NavLink>
 
-                                <NavLink
+                                {/* <NavLink
                                     className={({ isActive }) => (isActive ? 'active_nav' : 'nav__item')}
 
                                     to="/benchmark" onClick={handleLinkClick}>
@@ -154,11 +160,11 @@ const NavbarMain = () => {
                                     Download
                                 </NavLink> */}
 
-                                {/* <NavLink
+                                <NavLink
                                     className={({ isActive }) => (isActive ? 'active_nav' : 'nav__item')}
                                     to="/data-manual" onClick={handleLinkClick}>
                                     Data Manual
-                                </NavLink> */}
+                                </NavLink>
 
 
                                 {/* <a className="nav__item"
